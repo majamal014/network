@@ -1,0 +1,136 @@
+{% extends "network/layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>   
+{% endblock %}
+
+{% block body %}
+    <h1>Following Posts</h1>
+    
+    {% for post in posts %}
+        <div class="post" id="post-{{ post.id }}">
+            <h2><a href="{% url 'profile' post.user 1 %}">{{ post.user }}</a></h2>
+            {% if post.user == user %}
+                <button class="edit">Edit</button>
+            {% endif %}
+            <p class="content">{{ post.content }}</p>
+            <p class="date">{{ post.date }}</p>
+            {% if user in post.liked_users.all %}
+                <button class="like">Unlike</button>
+            {% else %}
+                <button class="like">Like</button>
+            {% endif %}
+            <span>{{ post.likes }}</span>
+        </div>
+    {% empty %}
+        <p>Your following users have not made any posts.</p>
+    {% endfor %}
+
+    <nav id="pagination">
+        <ul class="pagination justify-content-center">
+            {% if prev_page == 0 %}
+                <li class="page-item disabled"><a class="page-link" href="{% url 'following' prev_page %}">Previous</a></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="{% url 'following' prev_page %}">Previous</a></li>
+            {% endif %}
+            {% for page in pages %}
+                {% if page == active_page %}
+                    <li class="page-item active"><a class="page-link" href="{% url 'following' page %}">{{ page }}</a></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="{% url 'following' page %}">{{ page }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if next_page > num_pages %}
+                <li class="page-item disabled"><a class="page-link" href="{% url 'following' next_page %}">Next</a></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="{% url 'following' next_page %}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+
+    <script type="text/babel">
+
+        function EditMessage(event) {
+            const post_props = {
+                id: parseInt(event.target.parentElement.id.slice(5)),
+                user: event.target.parentElement.querySelector('h2').innerHTML,
+                content: event.target.parentElement.querySelector('.content').innerHTML,
+                date: event.target.parentElement.querySelector('.date').innerHTML,
+                likes: event.target.parentElement.querySelector('span').innerHTML
+            }
+            ReactDOM.createRoot(document.querySelector(`#${event.target.parentElement.id}`)).render(<Edit post_props={post_props}/>);
+        }
+        
+        function Post(props) {
+            return (
+                <React.Fragment>
+                    <h2>{props.post_props.user}</h2>
+                    <button onClick={EditMessage}>Edit</button>
+                    <p className="content">{props.post_props.content}</p>
+                    <p className="date">{props.post_props.date}</p>
+                    <button>Like</button><span>{props.post_props.likes}</span>
+                </React.Fragment>     
+            );
+        }
+
+        function Edit(props) {
+
+            function submitChange(event) {
+                event.preventDefault();
+                const new_content = event.target.querySelector('textarea').value;
+                props.post_props.content = new_content;
+                
+                fetch(`/edit/${props.post_props.id}`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        id: props.post_props.id,
+                        content: new_content
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log(result);
+                    ReactDOM.createRoot(event.target.parentElement).render(<Post post_props={props.post_props}/>);
+                });
+            }
+
+            console.log(props.post_props);
+
+            return (
+                <form onSubmit={submitChange}>
+                    <textarea autoFocus={true} name="content" defaultValue={props.post_props.content}/>
+                    <br/><input type="submit"/>
+                </form>    
+                            
+            );
+        }
+
+        function UpdateLike(event) {
+            const button = event.target;
+            const id = parseInt(button.parentElement.id.slice(5))
+            fetch(`/like/${id}`)
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+
+                let like_count = parseInt(button.parentElement.querySelector('span').innerHTML);
+                if (result.liked) {
+                    like_count++;
+                    button.parentElement.querySelector('.like').innerHTML = "Unlike";
+                } else {
+                    like_count--;
+                    button.parentElement.querySelector('.like').innerHTML = "Like";
+                }
+                button.parentElement.querySelector('span').innerHTML = like_count;
+            })
+        }
+ 
+        document.querySelectorAll(".edit").forEach(button => button.onclick = EditMessage);
+        document.querySelectorAll(".like").forEach(button => button.onclick = UpdateLike);
+
+    </script>
+{% endblock %}

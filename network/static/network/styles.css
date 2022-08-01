@@ -1,0 +1,14 @@
+h1 {
+    margin-left: 10px
+}
+
+.post {
+    border: 1px solid black;
+    padding: 20px;
+    margin: 20px;
+}
+
+.post textarea {
+    height: 100px;
+    width: 99%;
+}

@@ -50,7 +50,20 @@ def profile(request, name, page):
         user = User.objects.get(username=name)
         posts = user.posts.all().order_by('-date')
         p = Paginator(posts, 10)
-
+        
+        if request.user.is_authenticated:
+            return render(request, "network/profile.html", {
+                "username": name,
+                "num_followers": user.followers.count(),
+                "num_following": user.following.count(),
+                "posts": p.page(page).object_list,
+                "num_pages": p.num_pages,
+                "pages": range(1, p.num_pages+1),
+                "prev_page": page - 1,
+                "next_page": page + 1,
+                "active_page": page,
+                "following": user in request.user.following.all()
+            })
         return render(request, "network/profile.html", {
             "username": name,
             "num_followers": user.followers.count(),
@@ -61,7 +74,6 @@ def profile(request, name, page):
             "prev_page": page - 1,
             "next_page": page + 1,
             "active_page": page,
-            "following": user in request.user.following.all()
         })
 
 def following(request, page):

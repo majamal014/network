@@ -9,14 +9,16 @@
 
 {% block body %}
     <h1>All Posts</h1>
+    {% if user.is_authenticated %}
     <div class="post">
         <h2>New Post</h2>
         <form action="{% url 'new_post' %}" method="post">
             {% csrf_token %}
             <textarea name="content"></textarea>
-            <br><input type="submit">
+            <br><input type="submit" class="submit">
         </form>
     </div>
+    {% endif %}
 
     {% for post in posts %}
         <div class="post" id="post-{{ post.id }}">
@@ -57,7 +59,6 @@
         </ul>
     </nav>
 
-
     <script type="text/babel">
 
         function EditMessage(event) {
@@ -67,19 +68,21 @@
                 content: event.target.parentElement.querySelector('.content').innerHTML,
                 date: event.target.parentElement.querySelector('.date').innerHTML,
                 likes: event.target.parentElement.querySelector('span').innerHTML
-            }
+            };
             ReactDOM.createRoot(document.querySelector(`#${event.target.parentElement.id}`)).render(<Edit post_props={post_props}/>);
         }
         
         function Post(props) {
-            const link = `/profile/${props.post_props.user}/1`
+            const link = `/profile/${props.post_props.user}/1`;
+            
             return (
                 <React.Fragment>
                     <h2><a href={link}>{props.post_props.user}</a></h2>
                     <button onClick={EditMessage}>Edit</button>
                     <p className="content">{props.post_props.content}</p>
                     <p className="date">{props.post_props.date}</p>
-                    <button>Like</button><span>{props.post_props.likes}</span>
+                    <button onClick={UpdateLike} className="like">Like</button>
+                    <span>{props.post_props.likes}</span>
                 </React.Fragment>     
             );
         }
@@ -101,18 +104,15 @@
                 .then(response => response.json())
                 .then(result => {
                     console.log(result);
-                    ReactDOM.createRoot(event.target.parentElement).render(<Post post_props={props.post_props}/>);
+                    ReactDOM.createRoot(event.target.parentElement).render(<Post post_props={props.post_props}/>);                  
                 });
             }
-
-            console.log(props.post_props);
 
             return (
                 <form onSubmit={submitChange}>
                     <textarea autoFocus={true} name="content" defaultValue={props.post_props.content}/>
                     <br/><input type="submit"/>
-                </form>    
-                            
+                </form>
             );
         }
 
@@ -133,7 +133,7 @@
                     button.parentElement.querySelector('.like').innerHTML = "Like";
                 }
                 button.parentElement.querySelector('span').innerHTML = like_count;
-            })
+            });
         }
  
         document.querySelectorAll(".edit").forEach(button => button.onclick = EditMessage);

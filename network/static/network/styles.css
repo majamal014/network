@@ -12,3 +12,9 @@ h1 {
     height: 100px;
     width: 99%;
 }
+
+button, .submit {
+    background-color: #007bff;
+    color: white;
+    border: 1px solid #007bff;
+}
